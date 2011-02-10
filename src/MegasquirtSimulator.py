@@ -19,13 +19,50 @@ from struct import pack, unpack, calcsize
 import pickle
 import time
 import socket
-import select
+import csv
 
 
 host = "localhost"
 port = 7893
 buf = 1024
 addr = (host,port)
+
+class LogReader(csv.DictReader):
+	def __init__(self, f, fieldnames=None, restkey=None, restval=None,dialect="excel-tab", *args, **kwds):
+		csv.DictReader.__init__(self, f, fieldnames, restkey, restval, dialect)
+		
+	def next(self):
+		if self.line_num == 1:
+			self.signature = self._fieldnames[0]
+			self._fieldnames = None
+			# Used only for its side effect.
+			self.fieldnames
+			self.fixFieldNames()
+		row = self.reader.next()
+		self.line_num = self.reader.line_num
+
+		# unlike the basic reader, we prefer not to return blanks,
+		# because we will typically wind up with a dict full of None
+		# values
+		while row == []:
+			row = self.reader.next()
+		d = dict(zip(self.fieldnames, row))
+		lf = len(self.fieldnames)
+		lr = len(row)
+		if lf < lr:
+			d[self.restkey] = row[lf:]
+		elif lf > lr:
+			for key in self.fieldnames[lr:]:
+				d[key] = self.restval
+		return d
+	
+	def fixFieldNames(self):
+		translateList=[['RPM/100','rpm100'],['SecL','secl'],['MAP','mapADC'],['TP','tpsADC']]
+		for translation in translateList:
+			if translation[0] in self._fieldnames:
+				loc = self._fieldnames.index(translation[0])
+				self._fieldnames[loc]=translation[1]
+		pass
 
 class MegasquirtSimulator:
 
@@ -39,6 +76,7 @@ class MegasquirtSimulator:
 
 		# Open and parse the megasquirt ini file
 		self.open_ini()
+		self.open_log()
 
 		# Set some basic rtvars (Real Time Variables)
 		# Names are the same as in the megasquirt ini file
@@ -66,8 +104,9 @@ class MegasquirtSimulator:
 	def run(self):
 		
 		self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		self.s.bind(('127.0.0.1', 7893))
+		self.s.bind((host, port))
 		self.s.listen(1)
+		print "Waiting for connection"
 		conn, addr = self.s.accept()
 		
 		
@@ -83,7 +122,16 @@ class MegasquirtSimulator:
 		
 		
 		
+	def open_log(self):
+		self.logFileName = sys.argv[1]
+		self.logContents=[]
 		
+		logReader = LogReader(open(self.logFileName,'rb'),delimiter='\t')
+		for row in logReader:
+			self.logContents.append(row)
+		
+		#self.signature = logReader.signature
+		pass
 		
 		
 					
@@ -133,6 +181,13 @@ class MegasquirtSimulator:
 			if "ochBlockSize" in line:	# Found the size of the rtvars array
 				line = [item.strip() for item in line.split("=")]
 				self.ochBlockSize = int (line[1])
+			if "queryCommand" in line:	# Found signature command
+				line = [item.strip() for item in line.split("=")]
+				self.queryCommand = line[1].replace('"','')
+			if "ochGetCommand" in line:	# Found signature command
+				line = [item.strip() for item in line.split("=")]
+				self.ochGetCommand = line[1].replace('"','')
+				
 		f.close()
 
 		try:
@@ -169,7 +224,7 @@ class MegasquirtSimulator:
 
 
 	# S is the command to send the version string
-	def S_command(self):
+	def runQueryCommand(self):
 		return self.signature
 
 	# Q is the command to send the signature string
@@ -204,9 +259,8 @@ class MegasquirtSimulator:
 		for i in range(offset, offset + bytes):
 			table[i] = self.s.recv(1)	# Read a byte of data and store it in the table
 		return
-
 	# A is the command to return the real time variables array
-	def R_command(self):
+	def runOchCommand(self):
 		return self.build_rtvars()
 
 	# e is the command to write data with echo
@@ -267,7 +321,12 @@ class MegasquirtSimulator:
 		self.seconds += 100 	# Emulate the internal counter of the Megasquirt
 		if self.lastCommand != "A": print "Received '%s'" % self.lastCommand	# Prevent flooding the display with 'A' commands
 		try:
-			resp = getattr(self, "%s_command" % self.lastCommand)()
+			if self.lastCommand == self.queryCommand:
+				resp=self.runQueryCommand()
+			elif self.lastCommand == self.ochGetCommand:
+				resp = self.runOchCommand()
+			else:
+				resp = getattr(self, "%s_command" % self.lastCommand)()
 			if self.lastCommand != "A" and resp is not None: print "Returned data"
 			if resp:
 				transmit_time = len(resp) * 10.0 / 9600.0
