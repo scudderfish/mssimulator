@@ -100,6 +100,7 @@ class MegasquirtSimulator:
 		self.baroCorrection = 100
 		self.veCurr1 = 49
 		self.seconds = 0
+		self.logPosition = 0
 	
 	def run(self):
 		
@@ -299,6 +300,8 @@ class MegasquirtSimulator:
 	def build_rtvars(self):
 		string = ""
 		i = 0
+		self.logPosition = (self.logPosition+1) % len(self.logContents)
+		logData = self.logContents(self.logPosition)
 		while i < self.ochBlockSize:
 			if self.rtvars.has_key(i):
 				item = self.rtvars[i]
@@ -309,7 +312,9 @@ class MegasquirtSimulator:
 				continue
 			i += item["size"]
 			fmt = item["type"]
-			val = getattr(self, item["name"])	# Get the variable from the class space
+			val = logData[item["name"]]
+			if val is None:
+				getattr(self, item["name"])	# Get the variable from the class space
 			scale = item["scale"]
 			string += pack(fmt, int((val) / (scale)))
 		return string
