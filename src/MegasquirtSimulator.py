@@ -118,7 +118,7 @@ class MegasquirtSimulator:
 			if not data: break
 			self.lastCommand = data
 			response = self.generateResponse()
-			if response in None:
+			if response is None:
 				response=''
 			conn.send(response)
 		conn.close()
@@ -295,7 +295,7 @@ class MegasquirtSimulator:
 		string = ""
 		i = 0
 		self.logPosition = (self.logPosition+1) % len(self.logContents)
-		logData = self.logContents(self.logPosition)
+		logData = self.logContents[self.logPosition]
 		while i < self.ochBlockSize:
 			if self.rtvars.has_key(i):
 				item = self.rtvars[i]
@@ -306,11 +306,13 @@ class MegasquirtSimulator:
 				continue
 			i += item["size"]
 			fmt = item["type"]
-			val = logData[item["name"]]
-			if val is None:
-				getattr(self, item["name"])	# Get the variable from the class space
+			name = item["name"]
+			if logData.has_key(name) :
+				val = logData[name]
+			else:
+				val = getattr(self, name)	# Get the variable from the class space
 			scale = item["scale"]
-			string += pack(fmt, int((val) / (scale)))
+			string += pack(fmt, int(float(val) / (scale)))
 		return string
 
 	def write(self, cmd):
