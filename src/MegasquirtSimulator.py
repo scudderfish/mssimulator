@@ -118,6 +118,8 @@ class MegasquirtSimulator:
 			if not data: break
 			self.lastCommand = data
 			response = self.generateResponse()
+			if response in None:
+				response=''
 			conn.send(response)
 		conn.close()
 		
@@ -145,6 +147,10 @@ class MegasquirtSimulator:
 		f = open(ini, "r")
 		och_found = False
 		for line in f.readlines():
+			if "queryCommand" in line:	# Found signature command
+				tmp = [item.strip() for item in line.split("=")]
+				self.queryCommand = tmp[1].replace('"','')[:tmp[1].index(' ')-1].strip()
+
 			# Run through the ini file to find the output channels section
 			if not och_found:
 				if "[outputchannels]" in line.lower():
@@ -182,9 +188,6 @@ class MegasquirtSimulator:
 			if "ochBlockSize" in line:	# Found the size of the rtvars array
 				line = [item.strip() for item in line.split("=")]
 				self.ochBlockSize = int (line[1])
-			if "queryCommand" in line:	# Found signature command
-				line = [item.strip() for item in line.split("=")]
-				self.queryCommand = line[1].replace('"','')
 			if "ochGetCommand" in line:	# Found signature command
 				line = [item.strip() for item in line.split("=")]
 				self.ochGetCommand = line[1].replace('"','')
@@ -212,16 +215,7 @@ class MegasquirtSimulator:
 				table[j] = flash[j]
 			self.tables[i] = table
 
-	def next(self):
-		self.seconds += 100 	# Emulate the internal counter of the Megasquirt
-		char = self.s.recv()	# Read a single char from the serial port
-		if char != "A": print "Received '%s'" % char	# Prevent flooding the display with 'A' commands
-		try:
-			resp = getattr(self, "%s_command" % char)()
-			if char != "A" and resp is not None: print "Returned data"
-			if resp: self.tx(resp)
-		except AttributeError:
-			pass
+	
 
 
 	# S is the command to send the version string
