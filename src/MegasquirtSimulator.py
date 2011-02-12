@@ -320,7 +320,7 @@ class MegasquirtSimulator:
 
 	def generateResponse(self):
 		self.seconds += 100 	# Emulate the internal counter of the Megasquirt
-		if self.lastCommand != "A": print "Received '%s'" % self.lastCommand	# Prevent flooding the display with 'A' commands
+		if self.lastCommand != self.queryCommand: print "Received '%s'" % self.lastCommand	# Prevent flooding the display with 'A' commands
 		try:
 			if self.lastCommand == self.queryCommand:
 				resp=self.runQueryCommand()
@@ -328,11 +328,13 @@ class MegasquirtSimulator:
 				resp = self.runOchCommand()
 			else:
 				resp = getattr(self, "%s_command" % self.lastCommand)()
-			if self.lastCommand != "A" and resp is not None: print "Returned data"
+			if self.lastCommand != self.queryCommand and resp is not None: print "Returned data"
 			if resp:
 				transmit_time = len(resp) * 10.0 / 9600.0
 				time.sleep(transmit_time)
 				return resp
+			else:
+				print "Could not generate a response for command %s!" & self.lastCommand
 		except AttributeError:
 			pass
 
