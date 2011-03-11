@@ -115,6 +115,7 @@ class MegasquirtSimulator:
 		
 		while 1:
 			data = conn.recv(1)
+			print "Data=",data
 			if not data: break
 			self.lastCommand = data
 			response = self.generateResponse()
