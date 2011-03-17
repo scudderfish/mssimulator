@@ -57,7 +57,42 @@ class LogReader(csv.DictReader):
 		return d
 	
 	def fixFieldNames(self):
-		translateList=[['RPM/100','rpm100'],['SecL','secl'],['MAP','mapADC'],['TP','tpsADC']]
+		translateList=[ ['Time',        'time'],           
+						 ['SecL',        'secl'],           
+						 ['RPM/100',     'rpm100'],         
+						 ['MAP',         'map'],            
+						 ['TP',          'throttle'],       
+						 ['O2',          'egoVoltage'],     
+						 ['MAT',         'mat'],            
+						 ['CLT',         'coolant'],        
+						 ['Engine',      'engine'],         
+						 ['Gego',        'egoCorrection'],  
+						 ['Gair',        'airCorrection'],  
+						 ['Gwarm',       'warmupEnrich'],   
+						 ['Gbaro',       'baroCorrection'], 
+						 ['Gammae',      'gammaEnrich'],    
+						 ['TPSacc',      'accDecEnrich'],   
+						 ['Gve',         'veCurr1'],        
+						 ['PW',          'pulseWidth1'],    
+						 ['Gve2',        'veCurr2'],        
+						 ['PW2',         'pulseWidth2'],    
+						 ['DutyCycle1',  'dutyCycle1'],     
+						 ['DutyCycle2',  'dutyCycle2'],     
+						 ['idleDC',      'idleDC'],         
+						 ['BCDuty3',     'bcDC'],           
+						 ['Spark Angle', 'advSpark'],       
+						 ['EGT',         'egttemp'],        
+						 ['Fuel Press',  'fuelpress'],      
+						 ['Knock',       'KnockDeg'],       
+						 ['RPM',         'RpmHiRes'],       
+						 ['barometer',   'barometer'],      
+						 ['porta',       'porta'],	         
+						 ['portb',       'portb'],	         
+						 ['portc',       'portc'],	         
+						 ['portd',       'portd'],	         
+						 ['NOS On',      'nosActive1'],     
+						 ['batt V',      'batteryVoltage']]
+		
 		for translation in translateList:
 			if translation[0] in self._fieldnames:
 				loc = self._fieldnames.index(translation[0])
