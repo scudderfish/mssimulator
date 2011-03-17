@@ -104,25 +104,28 @@ class MegasquirtSimulator:
 	
 	def run(self):
 		
-		self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		self.s.bind((host, port))
-		self.s.listen(1)
-		print "Waiting for connection"
-		conn, addr = self.s.accept()
-		
-		
-		print "Connection"
-		
 		while 1:
-			data = conn.recv(1)
-			print "Data=",data
-			if not data: break
-			self.lastCommand = data
-			response = self.generateResponse()
-			if response is None:
-				response=''
-			conn.send(response)
-		conn.close()
+			self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+			self.s.bind((host, port))
+			self.s.listen(1)
+			print "Waiting for connection"
+			conn, addr = self.s.accept()
+			
+			
+			print "Connection from ",conn,addr
+			
+			while 1:
+				data = conn.recv(1)
+				print "Data=",data
+				if not data: break
+				self.lastCommand = data
+				response = self.generateResponse()
+				if response is None:
+					response=''
+				print "Responding with ",response
+				conn.send(response)
+				print "sent"
+			conn.close()
 		
 		
 		
@@ -192,6 +195,7 @@ class MegasquirtSimulator:
 			if "ochGetCommand" in line:	# Found signature command
 				line = [item.strip() for item in line.split("=")]
 				self.ochGetCommand = line[1].replace('"','')
+				print "och=",self.ochGetCommand
 				
 		f.close()
 
@@ -297,6 +301,7 @@ class MegasquirtSimulator:
 		i = 0
 		self.logPosition = (self.logPosition+1) % len(self.logContents)
 		logData = self.logContents[self.logPosition]
+		print "logData=",logData
 		while i < self.ochBlockSize:
 			if self.rtvars.has_key(i):
 				item = self.rtvars[i]
