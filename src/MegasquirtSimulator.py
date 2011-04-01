@@ -37,8 +37,9 @@ class LogReader(csv.DictReader):
 			self._fieldnames = None
 			# Used only for its side effect.
 			self.fieldnames
-			self.fixFieldNames()
+			
 		row = self.reader.next()
+		self.fixFieldNames()
 		self.line_num = self.reader.line_num
 
 		# unlike the basic reader, we prefer not to return blanks,
@@ -57,6 +58,9 @@ class LogReader(csv.DictReader):
 		return d
 	
 	def fixFieldNames(self):
+		if self._fieldnames is None:
+			return;
+		
 		translateList=[ ['Time',        'time'],           
 						 ['SecL',        'secl'],           
 						 ['RPM/100',     'rpm100'],         
@@ -335,6 +339,8 @@ class MegasquirtSimulator:
 		string = ""
 		i = 0
 		self.logPosition = (self.logPosition+1) % len(self.logContents)
+		if self.logPosition == 0:
+			self.logPosition =1
 		logData = self.logContents[self.logPosition]
 		print "logData=",logData
 		while i < self.ochBlockSize:
@@ -353,7 +359,9 @@ class MegasquirtSimulator:
 			else:
 				val = getattr(self, name)	# Get the variable from the class space
 			scale = item["scale"]
-			string += pack(fmt, int(float(val) / (scale)))
+			dataValue=int(float(val) / (scale))
+			dataItem = pack(fmt,dataValue)
+			string += dataItem
 		return string
 
 	def write(self, cmd):
