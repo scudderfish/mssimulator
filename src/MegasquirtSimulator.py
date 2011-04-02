@@ -361,6 +361,8 @@ class MegasquirtSimulator:
 			scale = item["scale"]
 			dataValue=int(float(val) / (scale))
 			dataItem = pack(fmt,dataValue)
+			if name=="secl":
+				print "secl byte=",ord(dataItem)
 			string += dataItem
 		return string
 
