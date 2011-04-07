@@ -37,7 +37,7 @@ class LogReader(csv.DictReader):
 			self._fieldnames = None
 			# Used only for its side effect.
 			self.fieldnames
-			self.fixFieldNames()
+		self.fixFieldNames()
 		row = self.reader.next()
 		self.line_num = self.reader.line_num
 
@@ -92,6 +92,9 @@ class LogReader(csv.DictReader):
 						 ['portd',       'portd'],	         
 						 ['NOS On',      'nosActive1'],     
 						 ['batt V',      'batteryVoltage']]
+		
+		if self._fieldnames is None:
+			return
 		
 		for translation in translateList:
 			if translation[0] in self._fieldnames:
@@ -334,7 +337,10 @@ class MegasquirtSimulator:
 	def build_rtvars(self):
 		string = ""
 		i = 0
-		self.logPosition = (self.logPosition+1) % len(self.logContents)
+		self.logPosition = (self.logPosition+1) 
+		self.logPosition = self.logPosition % len(self.logContents)
+		if (self.logPosition == 0) :
+			self.logPosition = 1
 		logData = self.logContents[self.logPosition]
 		print "logData=",logData
 		while i < self.ochBlockSize:
